@@ -1,0 +1,17 @@
+{
+  "name": "oss-catalog",
+  "version": "0.1.0",
+  "repository": "https://github.com/Servant-Cities/oss-catalog.git",
+  "scripts": {
+    "deploy_from_ini": "ts-node-dev ./scripts/deploy_from_ini.ts"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.6",
+    "ini": "^5.0.0",
+    "ts-node-dev": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.16",
+    "typescript": "^5.8.3"
+  }
+}
