@@ -7,6 +7,8 @@ export interface DockerDeployParams {
   ports?: string;
   volumes?: string;
   environment?: string;
+  command?: string;
+  docker_group?: string;
 }
 
 const docker = new Docker();
@@ -23,7 +25,7 @@ const ensureNetwork = async () => {
 };
 
 const deploy = async (params: DockerDeployParams) => {
-  const { image, tag, container_name, ports, volumes, environment } = params;
+  const { image, tag, container_name, ports, volumes, environment, command, docker_group } = params;
 
   const ExposedPorts: Record<string, {}> = {};
   const PortBindings: Record<string, { HostPort: string }[]> = {};
@@ -53,11 +55,13 @@ const deploy = async (params: DockerDeployParams) => {
       Image: `${image}:${tag}`,
       name: container_name,
       ExposedPorts,
+      Cmd: command ? command.split(" ") : undefined,
       HostConfig: {
         PortBindings,
         Binds: volumes?.split(","),
       },
       Env: environment?.split(","),
+      Labels: docker_group ? { "com.docker.compose.project": docker_group } : {},
     });
 
     await container.start();

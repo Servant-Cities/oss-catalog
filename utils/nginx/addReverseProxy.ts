@@ -9,14 +9,16 @@ type AddReverseProxyConfigFunction = (
   targetContainerName: string,
   nginxContainerName: string,
   domain: string,
-  internalPort: number
+  internalPort: number,
+  certbotEmail: string
 ) => Promise<void>;
 
 const addReverseProxyConfig: AddReverseProxyConfigFunction = async (
   targetContainerName,
   nginxContainerName,
   domain,
-  internalPort
+  internalPort,
+  certbotEmail
 ) => {
   try {
     const containers = await docker.listContainers({ all: true });
@@ -76,7 +78,7 @@ server {
       "--non-interactive",
       "--agree-tos",
       "-m",
-      "admin@" + domain
+      certbotEmail
     ]);
 
     // Final HTTPS reverse proxy config
