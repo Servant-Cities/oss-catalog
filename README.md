@@ -1,4 +1,4 @@
-## How to run
+## How to run locally
 
 Configure active services
 
@@ -16,3 +16,9 @@ Then run the following command to deploy all configured services.
 ```
 yarn run deploy_from_ini
 ```
+
+## General control list when deploying
+
+- [] git installed
+- [] docker installed
+
