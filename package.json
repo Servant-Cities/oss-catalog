@@ -8,6 +8,7 @@
   "dependencies": {
     "dockerode": "^4.0.6",
     "ini": "^5.0.0",
+    "tar-stream": "^3.1.7",
     "ts-node-dev": "^2.0.0"
   },
   "devDependencies": {

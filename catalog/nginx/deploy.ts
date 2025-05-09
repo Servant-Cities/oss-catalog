@@ -1,3 +1,4 @@
+import prepareDirectories from "../../utils/nginx/prepareDirectories";
 import dockerDeploy, { DockerDeployParams } from "../../utils/docker/deploy";
 
 export const deploy = async (params: DockerDeployParams) => {
@@ -6,6 +7,8 @@ export const deploy = async (params: DockerDeployParams) => {
   console.log(params);
 
   await dockerDeploy(params);
+
+  await prepareDirectories(params.container_name);
 };
 
 export default deploy;
