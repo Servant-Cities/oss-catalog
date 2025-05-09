@@ -30,38 +30,69 @@ const addReverseProxyConfig: AddReverseProxyConfigFunction = async (
 
     const sitesAvailablePath = "/etc/nginx/sites-available/";
     const sitesEnabledPath = "/etc/nginx/sites-enabled/";
-    const certsPath = "/etc/nginx/certs/";
     const configFileName = `${domain}.conf`;
-    const certFile = path.join(certsPath, `${domain}.crt`);
-    const keyFile = path.join(certsPath, `${domain}.key`);
 
-    // Generate SSL cert if it doesn't exist
+    // Temporary HTTP config for certbot to validate the domain
+    const certbotValidationConfig = `
+server {
+    listen 80;
+    server_name ${domain};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+}
+`;
+
+    const tempFilePath = path.join(__dirname, configFileName);
+    fs.writeFileSync(tempFilePath, certbotValidationConfig);
+
+    const pack = tar.pack();
+    pack.entry({ name: configFileName }, fs.readFileSync(tempFilePath));
+    pack.finalize();
+    await nginxContainer.putArchive(pack, { path: sitesAvailablePath });
+    fs.unlinkSync(tempFilePath);
+
+    // Link config and reload nginx
     await runExec(nginxContainer, [
-      "bash",
-      "-c",
-      `if [ ! -f "${certFile}" ]; then \
-        mkdir -p ${certsPath} && \
-        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-        -keyout "${keyFile}" -out "${certFile}" \
-        -subj "/CN=${domain}"; \
-      fi`
+      "ln",
+      "-sf",
+      path.join(sitesAvailablePath, configFileName),
+      path.join(sitesEnabledPath, configFileName),
     ]);
 
-    const reverseProxyConfig = `
-# Redirect HTTP to HTTPS
+    await runExec(nginxContainer, ["nginx", "-t"]);
+    await runExec(nginxContainer, ["nginx", "-s", "reload"]);
+
+    // Run Certbot inside container
+    await runExec(nginxContainer, [
+      "certbot",
+      "certonly",
+      "--webroot",
+      "-w",
+      "/var/www/certbot",
+      "-d",
+      domain,
+      "--non-interactive",
+      "--agree-tos",
+      "-m",
+      "admin@" + domain
+    ]);
+
+    // Final HTTPS reverse proxy config
+    const finalConfig = `
 server {
     listen 80;
     server_name ${domain};
     return 301 https://${domain}$request_uri;
 }
 
-# HTTPS server
 server {
     listen 443 ssl;
     server_name ${domain};
 
-    ssl_certificate ${certFile};
-    ssl_certificate_key ${keyFile};
+    ssl_certificate /etc/letsencrypt/live/${domain}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
@@ -75,29 +106,19 @@ server {
 }
 `;
 
-    const tempFilePath = path.join(__dirname, configFileName);
-    fs.writeFileSync(tempFilePath, reverseProxyConfig);
-
-    const pack = tar.pack();
-    pack.entry({ name: configFileName }, fs.readFileSync(tempFilePath));
-    pack.finalize();
-
-    await nginxContainer.putArchive(pack, { path: sitesAvailablePath });
+    fs.writeFileSync(tempFilePath, finalConfig);
+    const finalPack = tar.pack();
+    finalPack.entry({ name: configFileName }, fs.readFileSync(tempFilePath));
+    finalPack.finalize();
+    await nginxContainer.putArchive(finalPack, { path: sitesAvailablePath });
     fs.unlinkSync(tempFilePath);
-
-    await runExec(nginxContainer, [
-      "ln",
-      "-sf",
-      path.join(sitesAvailablePath, configFileName),
-      path.join(sitesEnabledPath, configFileName),
-    ]);
 
     await runExec(nginxContainer, ["nginx", "-t"]);
     await runExec(nginxContainer, ["nginx", "-s", "reload"]);
 
-    console.log("NGINX HTTPS config added and reloaded successfully.");
+    console.log("NGINX HTTPS config with Certbot SSL added and reloaded.");
   } catch (err) {
-    console.error("Error setting up HTTPS reverse proxy:", err);
+    console.error("Error setting up Certbot reverse proxy:", err);
   }
 };
 

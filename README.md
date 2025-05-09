@@ -20,5 +20,7 @@ yarn run deploy_from_ini
 ## General control list when deploying
 
 - [] git installed
+- [] nodejs installed
+- [] yarn installed
 - [] docker installed
 

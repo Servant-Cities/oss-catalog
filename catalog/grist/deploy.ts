@@ -9,7 +9,6 @@ export const deploy = async (
   console.log(params);
 
   await dockerDeploy(params);
-
   await addReverseProxyConfig(params.container_name, params.nginx_instance, params.domain, 8484);
 };
 
