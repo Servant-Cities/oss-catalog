@@ -7,21 +7,23 @@ import selfSignCert from "../../utils/openssl/selfSignCert";
 
 const docker = new Docker();
 
-type AddReverseProxyConfigFunction = (
-  targetContainerName: string,
-  nginxContainerName: string,
-  domain: string,
-  internalPort: number,
-  certbotEmail: string
-) => Promise<void>;
+type AddReverseProxyConfigParams = ({
+  targetContainerName: string;
+  nginxContainerName: string;
+  domain: string;
+  internalPort: number;
+  certbotEmail: string;
+  serverConfig?: string;
+})
 
-const addReverseProxyConfig: AddReverseProxyConfigFunction = async (
+const addReverseProxyConfig = async ({
   targetContainerName,
   nginxContainerName,
   domain,
   internalPort,
-  certbotEmail
-) => {
+  certbotEmail,
+  serverConfig
+}: AddReverseProxyConfigParams) => {
   try {
     const containers = await docker.listContainers({ all: true });
 
@@ -89,6 +91,8 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
+    ${serverConfig || ''}
+
     location / {
         proxy_pass http://${targetContainerName}:${internalPort};
         proxy_set_header Host $host;
@@ -133,7 +137,9 @@ async function runExec(container, cmd) {
 
   const inspect = await exec.inspect();
   if (inspect.ExitCode !== 0) {
-    throw new Error(`Command "${cmd.join(" ")}" failed with exit code ${inspect.ExitCode}`);
+    throw new Error(
+      `Command "${cmd.join(" ")}" failed with exit code ${inspect.ExitCode}`
+    );
   }
 }
 
