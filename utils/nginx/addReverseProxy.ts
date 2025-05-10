@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import tar from "tar-stream";
 import Docker from "dockerode";
+import registerNewCert from "../../utils/certbot/registerNewCert";
+import selfSignCert from "../../utils/openssl/selfSignCert";
 
 const docker = new Docker();
 
@@ -34,7 +36,6 @@ const addReverseProxyConfig: AddReverseProxyConfigFunction = async (
     const sitesEnabledPath = "/etc/nginx/sites-enabled/";
     const configFileName = `${domain}.conf`;
 
-    // Temporary HTTP config for certbot to validate the domain
     const certbotValidationConfig = `
 server {
     listen 80;
@@ -55,7 +56,6 @@ server {
     await nginxContainer.putArchive(pack, { path: sitesAvailablePath });
     fs.unlinkSync(tempFilePath);
 
-    // Link config and reload nginx
     await runExec(nginxContainer, [
       "ln",
       "-sf",
@@ -66,22 +66,13 @@ server {
     await runExec(nginxContainer, ["nginx", "-t"]);
     await runExec(nginxContainer, ["nginx", "-s", "reload"]);
 
-    // Run Certbot inside container
-    await runExec(nginxContainer, [
-      "certbot",
-      "certonly",
-      "--webroot",
-      "-w",
-      "/var/www/certbot",
-      "-d",
-      domain,
-      "--non-interactive",
-      "--agree-tos",
-      "-m",
-      certbotEmail
-    ]);
+    let certPaths;
+    if (domain.includes("localhost")) {
+      certPaths = await selfSignCert(nginxContainer, domain);
+    } else {
+      certPaths = await registerNewCert(nginxContainer, domain, certbotEmail);
+    }
 
-    // Final HTTPS reverse proxy config
     const finalConfig = `
 server {
     listen 80;
@@ -93,8 +84,8 @@ server {
     listen 443 ssl;
     server_name ${domain};
 
-    ssl_certificate /etc/letsencrypt/live/${domain}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;
+    ssl_certificate ${certPaths.certPath};
+    ssl_certificate_key ${certPaths.keyPath};
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
@@ -118,15 +109,16 @@ server {
     await runExec(nginxContainer, ["nginx", "-t"]);
     await runExec(nginxContainer, ["nginx", "-s", "reload"]);
 
-    console.log("NGINX HTTPS config with Certbot SSL added and reloaded.");
+    console.log("NGINX HTTPS config with SSL added and reloaded.");
   } catch (err) {
-    console.error("Error setting up Certbot reverse proxy:", err);
+    console.error("Error setting up reverse proxy:", err);
+    throw err;
   }
 };
 
-async function runExec(container: Docker.Container, Cmd: string[]) {
+async function runExec(container, cmd) {
   const exec = await container.exec({
-    Cmd,
+    Cmd: cmd,
     AttachStdout: true,
     AttachStderr: true,
   });
@@ -141,7 +133,7 @@ async function runExec(container: Docker.Container, Cmd: string[]) {
 
   const inspect = await exec.inspect();
   if (inspect.ExitCode !== 0) {
-    throw new Error(`Command "${Cmd.join(" ")}" failed with exit code ${inspect.ExitCode}`);
+    throw new Error(`Command "${cmd.join(" ")}" failed with exit code ${inspect.ExitCode}`);
   }
 }
 
