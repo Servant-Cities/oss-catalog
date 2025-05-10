@@ -1,8 +1,8 @@
 import addReverseProxyConfig from "../../utils/nginx/addReverseProxy";
-import dockerDeploy, { DockerDeployParams } from "../../utils/docker/deploy";
+import createAndStartContainer, { DockerContainerConfig } from "../../utils/docker/createAndStartContainer";
 
 export const deploy = async (
-  params: DockerDeployParams & {
+  params: DockerContainerConfig & {
     nginx_instance: string;
     domain: string;
     certbot_email: string;
@@ -12,7 +12,7 @@ export const deploy = async (
   console.log("Deploying Grist with the following params:");
   console.log(params);
 
-  await dockerDeploy(params);
+  await createAndStartContainer(params);
   await addReverseProxyConfig({
     targetContainerName: params.container_name,
     nginxContainerName: params.nginx_instance,

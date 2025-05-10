@@ -1,8 +1,8 @@
 import addReverseProxyConfig from "../../utils/nginx/addReverseProxy";
-import dockerDeploy, { DockerDeployParams } from "../../utils/docker/deploy";
+import createAndStartContainer, { DockerContainerConfig } from "../../utils/docker/createAndStartContainer";
 
 export const deploy = async (
-  params: DockerDeployParams & {
+  params: DockerContainerConfig & {
     nginx_instance: string;
     domain: string;
     certbot_email: string;
@@ -12,7 +12,7 @@ export const deploy = async (
   console.log("Deploying Keycloak with the following params:");
   console.log(params);
 
-  await dockerDeploy({
+  await createAndStartContainer({
     ...params,
     command: `start --hostname ${params.domain} --http-enabled true --proxy-headers xforwarded`,
   });

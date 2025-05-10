@@ -1,6 +1,6 @@
 import Docker from "dockerode";
 
-export interface DockerDeployParams {
+export interface DockerContainerConfig {
   image: string;
   tag: string;
   container_name: string;
@@ -24,7 +24,7 @@ const ensureNetwork = async () => {
   }
 };
 
-const deploy = async (params: DockerDeployParams) => {
+const createAndStartContainer = async (params: DockerContainerConfig) => {
   const { image, tag, container_name, ports, volumes, environment, command, docker_group } = params;
 
   const ExposedPorts: Record<string, {}> = {};
@@ -77,4 +77,4 @@ const deploy = async (params: DockerDeployParams) => {
   }
 };
 
-export default deploy;
+export default createAndStartContainer;
