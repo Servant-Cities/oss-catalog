@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "repository": "https://github.com/Servant-Cities/oss-catalog.git",
   "scripts": {
-    "deploy_from_ini": "ts-node-dev ./scripts/deploy_from_ini.ts"
+    "deploy_from_ini": "ts-node-dev ./scripts/deploy_from_ini.ts",
+    "remove_from_ini": "ts-node-dev ./scripts/remove_from_ini.ts"
   },
   "dependencies": {
     "dockerode": "^4.0.6",
