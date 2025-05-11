@@ -25,6 +25,8 @@ yarn run locally_deploy_from_ini
 ## Production
 
 ### Control list
+- [] DNS zone points to nginx instance
+- [] Firewall on nginx instance's server accepts connections on port 80 and 443
 - [] git installed
 - [] nodejs installed
 - [] yarn installed
