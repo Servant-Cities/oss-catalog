@@ -14,6 +14,8 @@ export interface DockerContainerConfig {
 const docker = new Docker();
 const NETWORK_NAME = "reverse_proxy";
 
+const isLocally = process.argv.includes("--locally");
+
 const ensureNetwork = async () => {
   const networks = await docker.listNetworks();
   const exists = networks.some(n => n.Name === NETWORK_NAME);
@@ -68,9 +70,12 @@ const createAndStartContainer = async (params: DockerContainerConfig) => {
     console.log(`Container ${container_name} is running in detached mode.`);
 
     const network = docker.getNetwork(NETWORK_NAME);
-    await network.connect({ Container: container.id });
 
-    console.log(`Connected ${container_name} to ${NETWORK_NAME} network.`);
+    if (isLocally) {
+      await network.connect({ Container: container.id });
+      console.log(`Connected ${container_name} to ${NETWORK_NAME} network for local setup.`);
+    }
+
   } catch (error) {
     console.error("Error deploying the container:", error);
     throw error;

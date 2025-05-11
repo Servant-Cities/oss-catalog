@@ -13,7 +13,6 @@ type AddReverseProxyConfigParams = ({
   domain: string;
   internalPort: number;
   certbotEmail: string;
-  serverConfig?: string;
 })
 
 const addReverseProxyConfig = async ({
@@ -22,7 +21,6 @@ const addReverseProxyConfig = async ({
   domain,
   internalPort,
   certbotEmail,
-  serverConfig
 }: AddReverseProxyConfigParams) => {
   try {
     const containers = await docker.listContainers({ all: true });
@@ -90,8 +88,6 @@ server {
     ssl_certificate_key ${certPaths.keyPath};
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
-
-    ${serverConfig || ''}
 
     location / {
         proxy_pass http://${targetContainerName}:${internalPort};

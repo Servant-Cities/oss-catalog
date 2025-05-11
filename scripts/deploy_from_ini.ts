@@ -2,6 +2,11 @@ import { readFile } from "node:fs/promises";
 import { parse } from "ini";
 import * as catalog from "../catalog";
 
+if (process.argv.includes('--locally')) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  console.warn('⚠️  SSL verification is disabled via --locally flag');
+}
+
 interface GlobalConfig {
   docker_group: string;
 }
@@ -28,36 +33,31 @@ interface Config {
 }
 
 const main = async () => {
-  let text = await readFile(`./active-services.ini`, {
+  const text = await readFile(`./active-services.ini`, {
     encoding: "utf-8",
   });
-
   const config: Config = parse(text);
 
-  const results: [string, boolean][] = [];
+  const outputLines: string[] = [];
+  let encounteredFailure = false;
 
-  await Object.entries(config['active-services']).reduce(
-    async (previousPromise, [service, params]) => {
-      await previousPromise;
-      try {
-        await catalog[service].deploy({ ...params, ...config.global });
-        results.push([service, true]);
-      } catch (error) {
-        results.push([service, false]);
-      }
-    },
-    Promise.resolve()
-  );
+  for (const [service, params] of Object.entries(config['active-services'])) {
+    if (encounteredFailure) {
+      outputLines.push(`⚠️ Skipped ${service}`);
+      continue;
+    }
 
-  console.log("\nDeployment Results:\n");
-
-  for (const [service, success] of results) {
-    if (success) {
-      console.log(`\x1b[32m✅ ${service}\x1b[0m`);
-    } else {
-      console.log(`\x1b[31m❌ ${service}\x1b[0m`);
+    try {
+      await catalog[service].deploy({ ...params, ...config.global });
+      outputLines.push(`✅ Successfully deployed ${service}`);
+    } catch (error) {
+      outputLines.push(`❌ Failed to deploy ${service}`);
+      encounteredFailure = true;
     }
   }
+
+  console.log("\nDeployment Results:\n");
+  console.log(outputLines.join("\n"));
 
   process.exit(0);
 };

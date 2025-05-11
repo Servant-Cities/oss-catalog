@@ -3,14 +3,17 @@
   "version": "0.1.0",
   "repository": "https://github.com/Servant-Cities/oss-catalog.git",
   "scripts": {
+    "locally_deploy_from_ini": "ts-node-dev ./scripts/deploy_from_ini.ts --locally",
     "deploy_from_ini": "ts-node-dev ./scripts/deploy_from_ini.ts",
-    "remove_from_ini": "ts-node-dev ./scripts/remove_from_ini.ts"
+    "remove_from_ini": "ts-node-dev ./scripts/remove_from_ini.ts",
+    "update_hosts_file_from_ini": "ts-node-dev ./scripts/update_hosts_file_from_ini.ts"
   },
   "dependencies": {
     "dockerode": "^4.0.6",
     "ini": "^5.0.0",
     "tar-stream": "^3.1.7",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "undici": "^7.9.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.16",

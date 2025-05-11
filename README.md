@@ -12,15 +12,33 @@ and then modify it to fit your needs:
 nano active-services.ini
 ```
 
+If you run some services on localhost, you need to update your device's hosts file, this is necessary to enable observability which is itself required to properly sequence some deployments. (the script doesn't delete anything there)
+```
+sudo yarn run update_hosts_file_from_ini
+```
+
 Then run the following command to deploy all configured services.
 ```
-yarn run deploy_from_ini
+yarn run locally_deploy_from_ini
 ```
 
-## General control list when deploying
+## Production
 
+### Control list
 - [] git installed
 - [] nodejs installed
 - [] yarn installed
 - [] docker installed
 
+### Run
+```
+yarn run deploy_from_ini
+```
+
+## Usefull scripts
+
+### Remove from INI
+Usefull in case you want to safely delete your current containers (eg to run a  deployment with updated values or clean your device after you tested locally) - Does not delete volumes
+```
+yarn run remove_from_ini
+```
