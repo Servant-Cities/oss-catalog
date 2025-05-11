@@ -27,13 +27,22 @@ const ensureNetwork = async () => {
 };
 
 const createAndStartContainer = async (params: DockerContainerConfig) => {
-  const { image, tag, container_name, ports, volumes, environment, command, docker_group } = params;
+  const {
+    image,
+    tag,
+    container_name,
+    ports,
+    volumes,
+    environment,
+    command,
+    docker_group,
+  } = params;
 
   const ExposedPorts: Record<string, {}> = {};
   const PortBindings: Record<string, { HostPort: string }[]> = {};
 
   if (ports) {
-    ports.split(",").forEach((pair) => {
+    ports.split(",").forEach(pair => {
       const [hostPort, containerPort] = pair.split(":");
       const portKey = `${containerPort}/tcp`;
       ExposedPorts[portKey] = {};
@@ -48,7 +57,9 @@ const createAndStartContainer = async (params: DockerContainerConfig) => {
     await new Promise((resolve, reject) => {
       docker.pull(`${image}:${tag}`, (err, stream) => {
         if (err) return reject(err);
-        docker.modem.followProgress(stream, (err) => (err ? reject(err) : resolve(null)));
+        docker.modem.followProgress(stream, err =>
+          err ? reject(err) : resolve(null)
+        );
       });
     });
 
@@ -63,7 +74,9 @@ const createAndStartContainer = async (params: DockerContainerConfig) => {
         Binds: volumes?.split(","),
       },
       Env: environment?.split(","),
-      Labels: docker_group ? { "com.docker.compose.project": docker_group } : {},
+      Labels: docker_group
+        ? { "com.docker.compose.project": docker_group }
+        : {},
     });
 
     await container.start();
@@ -71,11 +84,10 @@ const createAndStartContainer = async (params: DockerContainerConfig) => {
 
     const network = docker.getNetwork(NETWORK_NAME);
 
-    if (isLocally) {
-      await network.connect({ Container: container.id });
-      console.log(`Connected ${container_name} to ${NETWORK_NAME} network for local setup.`);
-    }
-
+    await network.connect({ Container: container.id });
+    console.log(
+      `Connected ${container_name} to ${NETWORK_NAME} network for local setup.`
+    );
   } catch (error) {
     console.error("Error deploying the container:", error);
     throw error;

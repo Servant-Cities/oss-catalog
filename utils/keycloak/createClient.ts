@@ -56,7 +56,9 @@ export const createKeycloakClient = async (config: KeycloakClientConfig) => {
       protocol: "openid-connect",
       rootUrl: `https://${clientDomain}`,
       redirectUris: [`https://${clientDomain}/oauth2/callback`],
+      postLogoutRedirectUris: [`https://${clientDomain}/*`],
       standardFlowEnabled: true,
+      directAccessGrantsEnabled: true,
       publicClient: false,
       secret: clientSecret,
     };
