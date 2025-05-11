@@ -13,8 +13,7 @@ async function registerNewCert(container: Docker.Container, domain: string, cert
       "--non-interactive",
       "--agree-tos",
       "-m",
-      certbotEmail,
-      "--force-renewal"
+      certbotEmail
     ]);
 
     const certPath = `/etc/letsencrypt/live/${domain}/fullchain.pem`;
