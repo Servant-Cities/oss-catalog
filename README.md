@@ -7,12 +7,14 @@ You can first copy the example template (all services activated)
 cp example.active-services.ini active-services.ini
 ```
 
-and then modify it to fit your needs:
+And then modify it to fit your needs: 
+
 ```
 nano active-services.ini
 ```
+Please be aware not to use special characters to name docker containers, this seems to prevent connection with keycloak
 
-If you run some services on localhost, you need to update your device's hosts file, this is necessary to enable observability which is itself required to properly sequence some deployments. (the script doesn't delete anything there)
+If you run some services on localhost, you might need to update your device's hosts file, this is necessary to enable observability which is itself required to properly sequence some deployments. (the script doesn't delete anything there)
 ```
 sudo yarn run update_hosts_file_from_ini
 ```
